@@ -81,7 +81,7 @@ def writecsvfile(exec_date):
     # Save file
     date = datetime.strptime(exec_date, '%Y-%m-%d %H')
     file_date_path = f"{date.strftime('%Y-%m-%d')}/{date.hour}"
-    output_dir = Path(f'{dag_path}/processed_data/{file_date_path}')
+    output_dir = Path(f'{dag_path}/data/raw_data/{file_date_path}')
     output_dir.mkdir(parents=True, exist_ok=True)
     # processed_data/2021-08-15/12/2021-08-15_12.csv
     # screener_df.to_csv(output_dir / f"{file_date_path}.csv".replace("/", "_"), index=False, mode='a')
@@ -98,7 +98,10 @@ writecsv_dag = DAG(
     'write-csv',
     default_args=default_args,
     description='Write to csv',
-    schedule_interval=timedelta(hours=1),
+    # schedule_interval=timedelta(hours=1),
+    # schedule_interval='0 12 * * *',
+    schedule_interval="@hourly",
+    # schedule_interval="*/2 * * * *",
     catchup=False,
 )
 

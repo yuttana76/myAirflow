@@ -7,12 +7,17 @@ https://www.youtube.com/watch?v=2Cbz9Z06KJo
 Apache-Airflow
 https://github.com/maxcotec/Apache-Airflow/blob/main/Monitoring_Dag/configs/airflow.cfg
 
-# Metrics Configuration
+### Metrics Configuration
 airflow-dashboards
 https://github.com/databand-ai/airflow-dashboards
 
 https://airflow.apache.org/docs/apache-airflow/stable/administration-and-deployment/logging-monitoring/metrics.html
 
+### Scheduling & Triggers
+https://airflow.apache.org/docs/apache-airflow/1.10.1/scheduler.html
+
+### Crontab
+https://crontab.guru/#59_*_*_*_*
 
 ### A Python statsd client
 https://github.com/jsocol/pystatsd
@@ -31,6 +36,11 @@ https://www.freecodecamp.org/news/how-to-setup-virtual-environments-in-python/
 
 
 # Comman to run 
+Change permission
+
+>chmod o+w logs
+>chmod g+w log
+
 >docker compose up airflow-init
 
 >docker compose up airflow-scheduler
@@ -62,3 +72,4 @@ Config data source prometheus
 http://localhost:9092
 
 Add new dashboard
+

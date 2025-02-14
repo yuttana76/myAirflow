@@ -27,6 +27,9 @@ x-airflow-common:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./configs/airflow.cfg:/opt/airflow/airflow.cfg
+    - ./data/raw_data:/opt/airflow/data/raw_data
+    - ./data/processed_data:/opt/airflow/data/processed_data
+
   user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-50000}"
   depends_on:
     mysql:
