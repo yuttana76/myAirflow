@@ -2,10 +2,10 @@ import requests
 import zipfile
 
 # Example usage:
-api_url = "https://stage.fundconnext.com/api/auth" 
+api_url = "" 
 data = {
-  "username": "api_mpam01",
-  "password": "n^4b&g+^jrES-?^j"
+  "username": "",
+  "password": ""
 }
 
 def getToken(url, data):
