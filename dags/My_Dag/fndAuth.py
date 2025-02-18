@@ -119,7 +119,7 @@ token=""
 
 # initializing the default arguments that we'll pass to our DAG
 with DAG(
-        'fundConnext_FundProfile_dag',
+        'FNC_FundProfile_dag',
         start_date=datetime(2025, 1, 1),
         schedule_interval="* 8 * * 1-5", 
         catchup=False
