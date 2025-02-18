@@ -38,8 +38,10 @@ https://www.freecodecamp.org/news/how-to-setup-virtual-environments-in-python/
 # Comman to run 
 Change permission
 
->chmod o+w logs
->chmod g+w log
+>chmod o+wX logs
+>chmod g+wX log
+
+>chmod o+wX data
 
 >docker compose up airflow-init
 
@@ -47,6 +49,7 @@ Change permission
 >docker compose up airflow-webserver
 >docker compose up statsd-exporter
 >docker compose up prometheus
+>docker compose up grafana
 
 >docker compose down
 
