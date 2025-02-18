@@ -75,9 +75,9 @@ services:
     ports:
       - 8081:8080
     environment:
-      - FC_API_URL=${FC_API_URL} 
-      - FC_API_USER=${FC_API_USER}
-      - FC_API_PASSPOWRD=${FC_API_PASSPOWRD}
+      - AIRFLOW_FC_API_URL=${AIRFLOW_FC_API_URL} 
+      - AIRFLOW_FC_API_USER=${AIRFLOW_FC_API_USER}
+      - AIRFLOW_FC_API_PASSPOWRD=${AIRFLOW_FC_API_PASSPOWRD}
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 10s

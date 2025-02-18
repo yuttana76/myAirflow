@@ -44,7 +44,6 @@ Change permission
 >chmod o+wX data
 
 >docker compose up airflow-init
-
 >docker compose up airflow-scheduler
 >docker compose up airflow-webserver
 >docker compose up statsd-exporter

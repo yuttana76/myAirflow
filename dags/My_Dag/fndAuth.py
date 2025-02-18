@@ -2,6 +2,8 @@ import sys
 import requests
 import zipfile
 import os
+from pathlib import Path
+
 from datetime import datetime
 from datetime import timedelta
 
@@ -10,19 +12,26 @@ from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 # We then import the days_ago function
 from airflow.utils.dates import days_ago
+from airflow.models import Variable
 
-
+# get dag directory path
+dag_path = os.getcwd()
 
 def T_GetToken():
   print("** getToken.")
   
   try:
 
-    api_url = os.environ["AIRFLOW_FC_API_URL"]+"/auth"
+    api_url = Variable.get("AIRFLOW_VAR_FC_API_URL")+"/auth"
     data = {
-      "username": os.environ["AIRFLOW_FC_API_USER"],
-      "password": os.environ["AIRFLOW_FC_API_PASSPOWRD"]
+      "username": Variable.get("AIRFLOW_VAR_FC_API_USER"),
+      "password": Variable.get("AIRFLOW_VAR_FC_API_PASSPOWRD")
     }
+    # api_url = os.environ["AIRFLOW_VAR_FC_API_URL"]+"/auth"
+    # data = {
+    #   "username": os.environ["AIRFLOW_VAR_FC_API_USER"],
+    #   "password": os.environ["AIRFLOW_VAR_FC_API_PASSPOWRD"]
+    # }
 
     response = requests.post(api_url, json=data)
 
@@ -49,10 +58,11 @@ def T_DownloadFile(token,fileType):
 
   print(f"-businessDate: {businessDate}")
   print(f"-fileType: {fileType}")
-  print(f"-token: {token}")
+  # print(f"-token: {token}")
 
   try:
-    url = os.environ["FC_API_URL"]+f"/files/{businessDate}/{fileType}.zip" 
+    # url = os.environ["FC_API_URL"]+f"/files/{businessDate}/{fileType}.zip" 
+    url = Variable.get("AIRFLOW_VAR_FC_API_URL")+f"/files/{businessDate}/{fileType}.zip" 
     headers = {
     "X-Auth-Token": token,
     "Content-Type": "application/json"
@@ -73,11 +83,10 @@ def T_DownloadFile(token,fileType):
 
       if content_type == 'application/zip' and content_disposition:
         filename = content_disposition.split(';')[1].strip().split('=')[1].strip('"') 
-        print(f"Content-Disposition: {content_disposition}")
         print(f"Filename: {filename}") 
 
     # Exptrtact zip file
-    extract_path = "./data/raw_data"
+    # extract_path = Path(f'{dag_path}/data/raw_data')
     try:
       with zipfile.ZipFile(download_file_path, 'r') as zip_ref:
         zip_ref.extractall(extract_path)
@@ -95,7 +104,8 @@ def T_DownloadFile(token,fileType):
 
 # Example usage:
 fileType = "FundProfile"  
-rawDataPpath = "./data/raw_data"
+rawDataPpath = Path(f'{dag_path}/data/raw_data')
+extract_path = rawDataPpath
 token=""
 
 # Test 
