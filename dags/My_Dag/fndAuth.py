@@ -18,10 +18,10 @@ def T_GetToken():
   
   try:
 
-    api_url = os.environ["FC_API_URL"]+"/auth"
+    api_url = os.environ["AIRFLOW_FC_API_URL"]+"/auth"
     data = {
-      "username": os.environ["FC_API_USER"],
-      "password": os.environ["FC_API_PASSPOWRD"]
+      "username": os.environ["AIRFLOW_FC_API_USER"],
+      "password": os.environ["AIRFLOW_FC_API_PASSPOWRD"]
     }
 
     response = requests.post(api_url, json=data)
