@@ -71,6 +71,10 @@ def T_DownloadFile(token,fileType):
     response = requests.get(url, headers=headers)
     response.raise_for_status()  # Raise an exception for bad status codes
 
+    if not os.path.exists(download_file_path):
+      os.makedirs(os.path.dirname(download_file_path)) 
+
+    
     with open(download_file_path, 'wb') as f:
       for chunk in response.iter_content(chunk_size=8192): 
         f.write(chunk)
@@ -104,7 +108,7 @@ def T_DownloadFile(token,fileType):
 
 # Example usage:
 fileType = "FundProfile"  
-rawDataPpath = Path(f'{dag_path}/data/raw_data')
+rawDataPpath = Path(f'{dag_path}/data/raw_data/fnc')
 extract_path = rawDataPpath
 token=""
 
@@ -122,16 +126,16 @@ with DAG(
 ) as dag:
 
     task1 = PythonOperator(
-        task_id='task1',
+        task_id='getToken',
         python_callable=T_GetToken,
         dag=dag,
         do_xcom_push=True 
     )
 
     task2 = PythonOperator(
-        task_id='task2',
+        task_id='downloadFiles',
         python_callable=T_DownloadFile,
-        op_kwargs={'token': '{{ ti.xcom_pull(task_ids="task1") }}', 'fileType': fileType},
+        op_kwargs={'token': '{{ ti.xcom_pull(task_ids="getToken") }}', 'fileType': fileType},
         dag=dag
     )
 
