@@ -13,9 +13,32 @@ from airflow.operators.python_operator import PythonOperator
 # We then import the days_ago function
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
+from My_Dag.ms_teams_operator import MSTeamsPowerAutomateWebhookOperator
+
 
 # get dag directory path
 dag_path = os.getcwd()
+
+fileType = "FundProfile"  
+rawDataPpath = Path(f'{dag_path}/data/raw_data/fnc')
+extract_path = rawDataPpath
+# token=""
+
+def notify_teams(context: dict):
+  print("** notify_teams.")
+
+  # op1 = MSTeamsPowerAutomateWebhookOperator(
+  #       task_id="send_to_teams",
+  #       http_conn_id="teams_webhook_conn",
+  #       heading_title="Airflow local",
+  #       header_bar_style="good",
+  #       heading_subtitle='heading_subtitle',
+  #       card_width_full=False,
+  #       body_message="""Dag **lorem_ipsum** has completed successfully in **localhost**""",
+  #       body_facts_dict={"Lorems": "184", "Dolor": "Sat", "Time taken": "2h 30m"},
+  #       button_text="View logs",
+  #   )
+
 
 def T_GetToken():
   print("** getToken.")
@@ -55,6 +78,8 @@ def T_GetToken():
 def T_DownloadFile(token,fileType):
   
   print("** downloadFile.")
+
+  sys.exit(1)
 
   download_file_path = f"{rawDataPpath}/{fileType}.zip"
 
@@ -111,11 +136,6 @@ def T_DownloadFile(token,fileType):
     sys.exit(1)
 
 
-# Example usage:
-fileType = "FundProfile"  
-rawDataPpath = Path(f'{dag_path}/data/raw_data/fnc')
-extract_path = rawDataPpath
-token=""
 
 # Test 
 # token=T_GetToken(api_url, data)
@@ -126,8 +146,9 @@ token=""
 with DAG(
         'FNC_FundProfile_dag',
         start_date=datetime(2025, 1, 1),
-        schedule_interval="* 8 * * 1-5", 
-        catchup=False
+        schedule_interval="0 8 * * 1-5", 
+        catchup=False,
+        on_failure_callback=notify_teams,
 ) as dag:
 
     task1 = PythonOperator(
@@ -141,7 +162,8 @@ with DAG(
         task_id='downloadFiles',
         python_callable=T_DownloadFile,
         op_kwargs={'token': '{{ ti.xcom_pull(task_ids="getToken") }}', 'fileType': fileType},
-        dag=dag
+        dag=dag,
+        on_failure_callback=notify_teams,
     )
 
     task1 >> task2 
