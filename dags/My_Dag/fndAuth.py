@@ -50,6 +50,9 @@ def T_GetToken():
       "username": Variable.get("FC_API_USER"),
       "password": Variable.get("FC_API_PASSPOWRD")
     }
+
+    print(f"FC_API_URL: {api_url}")
+
     # api_url = Variable.get("AIRFLOW_VAR_FC_API_URL")+"/auth"
     # data = {
     #   "username": Variable.get("AIRFLOW_VAR_FC_API_USER"),
