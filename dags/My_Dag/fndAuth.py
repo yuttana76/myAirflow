@@ -82,8 +82,6 @@ def T_DownloadFile(token,fileType):
   
   print("** downloadFile.")
 
-  sys.exit(1)
-
   download_file_path = f"{rawDataPpath}/{fileType}.zip"
 
   businessDate = (datetime.now() - timedelta(days=1)).strftime("%Y%m%d")
