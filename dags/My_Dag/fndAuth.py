@@ -45,7 +45,7 @@ def T_GetToken():
   
   try:
 
-    api_url = Variable.get("FC_API_URL")+"/auth"
+    api_url = Variable.get("FC_API_URL")+"/api/auth"
     data = {
       "username": Variable.get("FC_API_USER"),
       "password": Variable.get("FC_API_PASSPOWRD")
@@ -93,7 +93,7 @@ def T_DownloadFile(token,fileType):
 
   try:
     # url = os.environ["FC_API_URL"]+f"/files/{businessDate}/{fileType}.zip" 
-    url = Variable.get("FC_API_URL")+f"/files/{businessDate}/{fileType}.zip" 
+    url = Variable.get("FC_API_URL")+f"/api/files/{businessDate}/{fileType}.zip" 
     headers = {
     "X-Auth-Token": token,
     "Content-Type": "application/json"
