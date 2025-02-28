@@ -44,8 +44,8 @@ Change permission
 >chmod o+wX data
 
 >docker compose up airflow-init
->docker compose up airflow-scheduler
->docker compose up airflow-webserver
+>docker compose up airflow-scheduler -d
+>docker compose up airflow-webserver -d
 >docker compose up statsd-exporter
 >docker compose up prometheus
 >docker compose up grafana
@@ -79,3 +79,9 @@ VARIABLE
 AIRFLOW_VAR_FC_API_PASSPOWRD	
 AIRFLOW_VAR_FC_API_URL
 AIRFLOW_VAR_FC_API_USER
+
+# Postgres
+
+CREATE USER etl_user WITH PASSWORD 'password';
+GRANT CONNECT ON DATABASE 'lbdu_db' TO 'etl_user'
+GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO 'etl_user'

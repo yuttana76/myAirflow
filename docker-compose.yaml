@@ -64,6 +64,19 @@ services:
       interval: 10s
       retries: 5
 
+  postgres:
+    image: postgres:15
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: lbdu_user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: lbdu_db
+    # networks:
+    #   - reverse
+
   airflow-scheduler:
     <<: *airflow-common
     command: scheduler
@@ -128,3 +141,4 @@ volumes:
   my-db:
   prometheus_data:
   grafana_data:
+  postgres_data:
