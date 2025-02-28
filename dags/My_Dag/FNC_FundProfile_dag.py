@@ -193,11 +193,11 @@ def T_postgres_upsert_dataframe(fileName):
       "registrar",
       "register_id",
       "lmts_notice_period_amount",
-      "lmts_notice_perios_%aum",
+      "lmts_notice_perios_perc_aum",
       "lmts_adls_amount",
-      "lmts_adls_%aum",
+      "lmts_adls_perc_aum",
       "lmts_liquidity_fee_amount",
-      "lmts_liquidity_fee_%aum",
+      "lmts_liquidity_fee_perc_aum",
       "other_information_url",
       "currency",
       "complex_fund_presentation",
@@ -272,9 +272,9 @@ def T_postgres_upsert_dataframe(fileName):
   
           for index, row in df.iterrows():
               fund_code = row.get('fund_code')
-              amc_code = row.get('amc_code')
-              fundname_th = row.get('fundname_th')
-              fundname_en = row.get('fundname_en')
+              # amc_code = row.get('amc_code')
+              # fundname_th = row.get('fundname_th')
+              # fundname_en = row.get('fundname_en')
 
               if fund_code is None:
                   logging.error(f"Missing fund_code in row {index}. Skipping.")
@@ -282,13 +282,153 @@ def T_postgres_upsert_dataframe(fileName):
 
               cur.execute(
                   """
-                  INSERT INTO "stg_fnc_fundProfile" (fund_code, amc_code, fundname_th, fundname_en)
-                  VALUES (%s, %s, %s, %s)
+                  INSERT INTO "stg_fnc_fundProfile" (fund_code,amc_code,fundname_th,fundname_en,fund_policy,tax_type,fif_flag,dividend_flag,registration_date,fund_risk_level,fx_risk_flag,
+                  fatca_allow_flag,buy_cut_off_time,fst_lowbuy_val,nxt_lowbuy_val,sell_cut_off_time,lowsell_val,lowsell_unit,lowbal_val,lowbal_unit,
+                  sell_settlement_day,switching_settlement_day,switch_out_flag,switch_in_flag,fund_class,buy_period_flag,sell_period_flag,switch_in_periold_flag,switch_out_periold_flag,buy_pre_order_day,
+                  sell_pre_order_day,switch_pre_order_day,auto_redeem_fund,beg_ipo_date,end_ipo_date,plain_complex_fund,derivatives_flag,lag_allocation_day,settlement_holiday_flag,hyealth_insurrance,
+                  previous_fund_code,investor_alert,isin,lowbal_condition,project_retail_type,fund_compare_perfermance_description,allocate_digit,etf_flag,trustee,registrar,
+                  register_id,lmts_notice_period_amount,lmts_notice_perios_perc_aum,lmts_adls_amount,lmts_adls_perc_aum,lmts_liquidity_fee_amount,lmts_liquidity_fee_perc_aum,other_information_url,currency,complex_fund_presentation,risk_acknowledgement_of_complex_fund,redemption_type_condition)
+                  VALUES (%s, %s, %s, %s, %s,%s, %s, %s, %s, %s,
+                          %s, %s, %s, %s, %s,%s, %s, %s, %s, %s,
+                          %s, %s, %s, %s, %s,%s, %s, %s, %s, %s,
+                          %s, %s, %s, %s, %s,%s, %s, %s, %s, %s,
+                          %s, %s, %s, %s, %s,%s, %s, %s, %s, %s,
+                          %s, %s, %s, %s, %s,%s, %s, %s, %s, %s, %s, %s)
                   ON CONFLICT (fund_code) DO UPDATE
                   SET amc_code = EXCLUDED.amc_code,
-                      fundname_th = EXCLUDED.fundname_th,
-                      fundname_en = EXCLUDED.fundname_en;
-                  """,(fund_code, amc_code, fundname_th, fundname_en),
+                      fundname_th= EXCLUDED.fundname_th,
+                      fundname_en= EXCLUDED.fundname_en,
+                      fund_policy= EXCLUDED.fund_policy,
+                      tax_type= EXCLUDED.tax_type,
+                      fif_flag= EXCLUDED.fif_flag,
+                      dividend_flag= EXCLUDED.dividend_flag,
+                      registration_date= EXCLUDED.registration_date,
+                      fund_risk_level= EXCLUDED.fund_risk_level,
+                      fx_risk_flag= EXCLUDED.fx_risk_flag,
+
+                      fatca_allow_flag= EXCLUDED.fatca_allow_flag,
+                      buy_cut_off_time= EXCLUDED.buy_cut_off_time,
+                      fst_lowbuy_val= EXCLUDED.fst_lowbuy_val,
+                      nxt_lowbuy_val= EXCLUDED.nxt_lowbuy_val,
+                      sell_cut_off_time= EXCLUDED.sell_cut_off_time,
+                      lowsell_val= EXCLUDED.lowsell_val,
+                      lowsell_unit= EXCLUDED.lowsell_unit,
+                      lowbal_val= EXCLUDED.lowbal_val,
+                      lowbal_unit= EXCLUDED.lowbal_unit,
+
+                      sell_settlement_day= EXCLUDED.sell_settlement_day,
+                      switching_settlement_day= EXCLUDED.switching_settlement_day,
+                      switch_out_flag= EXCLUDED.switch_out_flag,
+                      switch_in_flag= EXCLUDED.switch_in_flag,
+                      fund_class= EXCLUDED.fund_class,
+                      buy_period_flag= EXCLUDED.buy_period_flag,
+                      sell_period_flag= EXCLUDED.sell_period_flag,
+                      switch_in_periold_flag= EXCLUDED.switch_in_periold_flag,
+                      switch_out_periold_flag= EXCLUDED.switch_out_periold_flag,
+                      buy_pre_order_day= EXCLUDED.buy_pre_order_day,
+
+                      sell_pre_order_day= EXCLUDED.sell_pre_order_day,
+                      switch_pre_order_day= EXCLUDED.switch_pre_order_day,
+                      auto_redeem_fund= EXCLUDED.auto_redeem_fund,
+                      beg_ipo_date= EXCLUDED.beg_ipo_date,
+                      end_ipo_date= EXCLUDED.end_ipo_date,
+                      plain_complex_fund= EXCLUDED.plain_complex_fund,
+                      derivatives_flag= EXCLUDED.derivatives_flag,
+                      lag_allocation_day= EXCLUDED.lag_allocation_day,
+                      settlement_holiday_flag= EXCLUDED.settlement_holiday_flag,
+                      hyealth_insurrance= EXCLUDED.hyealth_insurrance,
+
+                      previous_fund_code= EXCLUDED.previous_fund_code,
+                      investor_alert= EXCLUDED.investor_alert,
+                      isin= EXCLUDED.isin,
+                      lowbal_condition= EXCLUDED.lowbal_condition,
+                      project_retail_type= EXCLUDED.project_retail_type,
+                      fund_compare_perfermance_description= EXCLUDED.fund_compare_perfermance_description,
+                      allocate_digit= EXCLUDED.allocate_digit,
+                      etf_flag= EXCLUDED.etf_flag,
+                      trustee= EXCLUDED.trustee,
+                      registrar= EXCLUDED.registrar,
+
+                      register_id= EXCLUDED.register_id,
+                      lmts_notice_period_amount= EXCLUDED.lmts_notice_period_amount,
+                      lmts_notice_perios_perc_aum= EXCLUDED.lmts_notice_perios_perc_aum,
+                      lmts_adls_amount= EXCLUDED.lmts_adls_amount,
+                      lmts_adls_perc_aum= EXCLUDED.lmts_adls_perc_aum,
+                      lmts_liquidity_fee_amount= EXCLUDED.lmts_liquidity_fee_amount,
+                      lmts_liquidity_fee_perc_aum= EXCLUDED.lmts_liquidity_fee_perc_aum,
+                      other_information_url= EXCLUDED.other_information_url,
+                      currency= EXCLUDED.currency,
+                      complex_fund_presentation= EXCLUDED.complex_fund_presentation,
+                      risk_acknowledgement_of_complex_fund= EXCLUDED.risk_acknowledgement_of_complex_fund,
+                      redemption_type_condition= EXCLUDED.redemption_type_condition
+                  """,(row.get('fund_code'),
+                       row.get('amc_code'),
+                        row.get('fundname_th'),
+                        row.get('fundname_en'),
+                        row.get('fund_policy'),
+                        row.get('tax_type'),
+                        row.get('fif_flag'),
+                        row.get('dividend_flag'),
+                        row.get('registration_date'),
+                        row.get('fund_risk_level'),
+                        row.get('fx_risk_flag'),
+
+                        row.get('fatca_allow_flag'),
+                        row.get('buy_cut_off_time'),
+                        row.get('fst_lowbuy_val'),
+                        row.get('nxt_lowbuy_val'),
+                        row.get('sell_cut_off_time'),
+                        row.get('lowsell_val'),
+                        row.get('lowsell_unit'),
+                        row.get('lowbal_val'),
+                        row.get('lowbal_unit'),
+
+                        row.get('sell_settlement_day'),
+                        row.get('switching_settlement_day'),
+                        row.get('switch_out_flag'),
+                        row.get('switch_in_flag'),
+                        row.get('fund_class'),
+                        row.get('buy_period_flag'),
+                        row.get('sell_period_flag'),
+                        row.get('switch_in_periold_flag'),
+                        row.get('switch_out_periold_flag'),
+                        row.get('buy_pre_order_day'),
+
+                        row.get('sell_pre_order_day'),
+                        row.get('switch_pre_order_day'),
+                        row.get('auto_redeem_fund'),
+                        row.get('beg_ipo_date'),
+                        row.get('end_ipo_date'),
+                        row.get('plain_complex_fund'),
+                        row.get('derivatives_flag'),
+                        row.get('lag_allocation_day'),
+                        row.get('settlement_holiday_flag'),
+                        row.get('hyealth_insurrance'),
+
+                        row.get('previous_fund_code'),
+                        row.get('investor_alert'),
+                        row.get('isin'),
+                        row.get('lowbal_condition'),
+                        row.get('project_retail_type'),
+                        row.get('fund_compare_perfermance_description'),
+                        row.get('allocate_digit'),
+                        row.get('etf_flag'),
+                        row.get('trustee'),
+                        row.get('registrar'),
+
+                        row.get('register_id'),
+                        row.get('lmts_notice_period_amount'),
+                        row.get('lmts_notice_perios_perc_aum'),
+                        row.get('lmts_adls_amount'),
+                        row.get('lmts_adls_perc_aum'),
+                        row.get('lmts_liquidity_fee_amount'),
+                        row.get('lmts_liquidity_fee_perc_aum'),
+                        row.get('other_information_url'),
+                        row.get('currency'),
+                        row.get('complex_fund_presentation'),
+                        row.get('risk_acknowledgement_of_complex_fund'),
+                        row.get('redemption_type_condition')
+                        ),
               )
               logging.info(f"Upserted row {index} with fund_code: {fund_code}")
 

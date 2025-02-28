@@ -44,6 +44,7 @@ Change permission
 >chmod o+wX data
 
 >docker compose up airflow-init
+>docker compose up postgres -d
 >docker compose up airflow-scheduler -d
 >docker compose up airflow-webserver -d
 >docker compose up statsd-exporter
