@@ -15,6 +15,9 @@ from airflow.models import Variable
 import psycopg2
 import logging
 
+from My_Dag.fundconnext_util import getFundConnextToken
+
+
 # get dag directory path (this might not be needed if you use Airflow's standard DAG folder structure)
 dag_path = os.getcwd()
 
@@ -31,17 +34,9 @@ def notify_teams(context: dict):
 
 def T_GetToken():
     logging.info(f"getToken()")
-    api_url = Variable.get("FC_API_URL") + "/api/auth"
-    data = {
-        "username": Variable.get("FC_API_USER"),
-        "password": Variable.get("FC_API_PASSPOWRD")
-    }
     try:
-        response = requests.post(api_url, json=data)
-        response.raise_for_status()
-        response_data = response.json()
-        token = response_data.get('access_token')
-        return token
+        token = getFundConnextToken()
+        return token 
     except requests.exceptions.RequestException as e:
         logging.error(f"Error getting token: {e}")
         raise AirflowException(f"Failed to get token: {e}")
@@ -204,19 +199,10 @@ def T_postgres_upsert_dataframe(fileName):
         df.drop_duplicates(inplace=True)
 
         cols = tuple(df.columns)
-        
         # update_set_clause = ", ".join([f'"stg_fnc_fundProfile".{col} = EXCLUDED.{col}' for col in cols[1:]])
         update_set_clause = ", ".join([f'{col} = EXCLUDED.{col}' for col in cols[1:]])
-
         placeholders = ', '.join(['%s'] * len(cols))
         
-        # sql = f"""
-        #     INSERT INTO "stg_fnc_fundProfile" ({', '.join(cols)},createdDT, updateDT)
-        #     VALUES ({placeholders},CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-        #     ON CONFLICT (fund_code) DO UPDATE
-        #     SET ({', '.join(cols[1:])}) = (EXCLUDED.{', '.join(cols[1:])}), updateDT = CURRENT_TIMESTAMP;
-        # """
-
         sql = f"""
             INSERT INTO "stg_fnc_fundProfile" ({', '.join(cols)}, createdDT, updateDT)
             VALUES ({placeholders}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
