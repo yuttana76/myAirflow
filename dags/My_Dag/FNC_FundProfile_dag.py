@@ -287,13 +287,15 @@ def T_postgres_upsert_dataframe(fileName):
                   sell_settlement_day,switching_settlement_day,switch_out_flag,switch_in_flag,fund_class,buy_period_flag,sell_period_flag,switch_in_periold_flag,switch_out_periold_flag,buy_pre_order_day,
                   sell_pre_order_day,switch_pre_order_day,auto_redeem_fund,beg_ipo_date,end_ipo_date,plain_complex_fund,derivatives_flag,lag_allocation_day,settlement_holiday_flag,hyealth_insurrance,
                   previous_fund_code,investor_alert,isin,lowbal_condition,project_retail_type,fund_compare_perfermance_description,allocate_digit,etf_flag,trustee,registrar,
-                  register_id,lmts_notice_period_amount,lmts_notice_perios_perc_aum,lmts_adls_amount,lmts_adls_perc_aum,lmts_liquidity_fee_amount,lmts_liquidity_fee_perc_aum,other_information_url,currency,complex_fund_presentation,risk_acknowledgement_of_complex_fund,redemption_type_condition)
+                  register_id,lmts_notice_period_amount,lmts_notice_perios_perc_aum,lmts_adls_amount,lmts_adls_perc_aum,lmts_liquidity_fee_amount,lmts_liquidity_fee_perc_aum,other_information_url,currency,complex_fund_presentation,risk_acknowledgement_of_complex_fund,redemption_type_condition,
+                  createdDT, updateDT)
                   VALUES (%s, %s, %s, %s, %s,%s, %s, %s, %s, %s,
                           %s, %s, %s, %s, %s,%s, %s, %s, %s, %s,
                           %s, %s, %s, %s, %s,%s, %s, %s, %s, %s,
                           %s, %s, %s, %s, %s,%s, %s, %s, %s, %s,
                           %s, %s, %s, %s, %s,%s, %s, %s, %s, %s,
-                          %s, %s, %s, %s, %s,%s, %s, %s, %s, %s, %s, %s)
+                          %s, %s, %s, %s, %s,%s, %s, %s, %s, %s, %s, %s
+                          , CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                   ON CONFLICT (fund_code) DO UPDATE
                   SET amc_code = EXCLUDED.amc_code,
                       fundname_th= EXCLUDED.fundname_th,
@@ -360,7 +362,8 @@ def T_postgres_upsert_dataframe(fileName):
                       currency= EXCLUDED.currency,
                       complex_fund_presentation= EXCLUDED.complex_fund_presentation,
                       risk_acknowledgement_of_complex_fund= EXCLUDED.risk_acknowledgement_of_complex_fund,
-                      redemption_type_condition= EXCLUDED.redemption_type_condition
+                      redemption_type_condition= EXCLUDED.redemption_type_condition,
+                      updateDT = CURRENT_TIMESTAMP
                   """,(row.get('fund_code'),
                        row.get('amc_code'),
                         row.get('fundname_th'),
@@ -451,7 +454,7 @@ def T_postgres_upsert_dataframe(fileName):
 
 # initializing the default arguments that we'll pass to our DAG
 with DAG(
-        'FNC_FundProfile_dag',
+        'fnc_fundprofile_dag',
         start_date=datetime(2025, 1, 1),
         schedule_interval="0 8 * * 1-5", 
         catchup=False,
