@@ -128,4 +128,34 @@ def getFundProfileCols():
     except requests.exceptions.RequestException as e:
         logging.error(f"get fund profile columns {e}")
         raise AirflowException(f"Failed to get token: {e}")
+
+def getNavCols():
+    try:
+        cols = [
+            "amc_code",
+            "fund_code",
+            "aum",
+            "nav",
+            "offer_nav",
+            "bid_nav",
+            "switch_out_nav",
+            "switch_in_nav",
+            "nav_date",
+            "sa_code_for_unit_link",
+            "total_unit",
+            "total_aum_all_share_class",
+            "total_unit_all_share_class",
+            "filler",
+            "filler",
+            "filler",
+            "filler",
+            "filler",
+            "filler",
+            "filler"
+        ]
+        
+        return cols
+    except requests.exceptions.RequestException as e:
+        logging.error(f"get fund profile columns {e}")
+        raise AirflowException(f"Failed to get token: {e}")
     
