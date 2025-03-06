@@ -15,7 +15,7 @@ from airflow.models import Variable
 import psycopg2
 import logging
 
-from My_Dag.utils.fundconnext_util import getFundConnextToken, getNavCols
+from My_Dag.utils.fundconnext_util import getFundConnextToken, getNavColsV2
 
 
 # get dag directory path (this might not be needed if you use Airflow's standard DAG folder structure)
@@ -95,7 +95,8 @@ def T_postgres_upsert_dataframe(fileName):
         
         # df.columns = df.iloc[0] #Get Column name from the first row
         # df = df[1:] # Remove First row
-        df.columns =  getNavCols()
+        # df.columns =  getNavColsV3()   #Support Nav V3 only
+        df.columns =  getNavColsV2()
         
         # Remove column Filler
         df.drop(columns=["filler"],inplace=True)
