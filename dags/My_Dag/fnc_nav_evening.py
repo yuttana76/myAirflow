@@ -162,30 +162,30 @@ def T_postgres_upsert_dataframe(fileName):
         raise AirflowException(f"An unexpected error occurred: {e}")
 
 with DAG(
-    'fnc_NAV',
+    'fnc_NAV_evening',
     start_date=days_ago(1),  #More robust
-    schedule_interval="0 8 * * 1-5",
+    schedule_interval="0 17 * * 1-5",
     catchup=False,
     on_failure_callback=notify_teams,
 ) as dag:
 
     task1 = PythonOperator(
-        task_id='getToken',
+        task_id='getToken_evening',
         python_callable=T_GetToken,
         do_xcom_push=True
     )
 
     task2 = PythonOperator(
-        task_id='downloadFiles',
+        task_id='downloadFiles_evening',
         python_callable=T_DownloadFile,
-        op_kwargs={'token': '{{ ti.xcom_pull(task_ids="getToken") }}', 'fileType': fileType},
+        op_kwargs={'token': '{{ ti.xcom_pull(task_ids="getToken_evening") }}', 'fileType': fileType},
         on_failure_callback=notify_teams,
     )
 
     task3 = PythonOperator(
-        task_id='postgres_upsert',
+        task_id='pg_upsert_evening',
         python_callable=T_postgres_upsert_dataframe,
-        op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="downloadFiles") }}'},
+        op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="downloadFiles_evening") }}'},
         on_failure_callback=notify_teams,
     )
 
