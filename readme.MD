@@ -43,10 +43,14 @@ Change permission
 
 >chmod o+wX data
 
+## Start Airflow
 >docker compose up airflow-init
 >docker compose up postgres -d
 >docker compose up airflow-scheduler -d
 >docker compose up airflow-webserver -d
+
+
+## Start grafana
 >docker compose up statsd-exporter
 >docker compose up prometheus
 >docker compose up grafana
@@ -57,10 +61,10 @@ Change permission
 docker rmi $(docker images -f dangling=true -q)
 
 
-
-
 ## airflow web server
 http://localhost:8081
+user:admin
+password:airflow
 
 ## statsd-exporter
 http://localhost:9102/

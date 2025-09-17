@@ -3,7 +3,30 @@
 import requests
 import logging
 from airflow.models import Variable
+from airflow.exceptions import AirflowException
 
+
+# def replace_value_in_tuple(original_tuple, old_value, new_value):
+#     """
+#     Finds and replaces all occurrences of a value in a tuple.
+
+#     Args:
+#         original_tuple: The original tuple.
+#         old_value: The value to be replaced.
+#         new_value: The new value.
+
+#     Returns:
+#         A new tuple with the replaced values.
+#     """
+#     new_list = list(original_tuple)  # Convert to list for mutability
+#     for i, val in enumerate(new_list):
+#         if val == old_value:
+#             new_list[i] = new_value
+#     return tuple(new_list)  # Convert back to tuple
+
+#Example using list comprehension
+def replace_value_in_tuple_comp(original_tuple, old_value, new_value):
+    return tuple(new_value if val == old_value else val for val in original_tuple)
 
 def getFundConnextToken():
     logging.info(f"getToken()")
@@ -179,3 +202,190 @@ def getNavColsV3():
         logging.error(f"get fund profile columns {e}")
         raise AirflowException(f"Failed to get token: {e}")
     
+
+def getCustomerINDCols():
+    try:
+        cols = [
+            "identificationCardType",
+            "passportCountry",
+            "cardNumber",
+            "cardExpiryDate",
+            "accompanyingDocument",
+            "title",
+            "titleOther",
+            "enFirstName",
+            "enLastName",
+            "thFirstName",
+            "thLastName",
+            "birthDate",
+            "nationality",
+            "mobileNumber",
+            "email",
+            "phone",
+        "fax",
+        "maritalStatus",
+        # "spouse",
+        "occupationId",
+        "occupationOther",
+        "businessTypeId",
+        "businessTypeOther",
+        "monthlyIncomeLevel",
+        "assetValue",
+        "incomeSource",
+        "incomeSourceOther",
+        "companyName",
+        "currentAddressSameAsFlag",
+        "workPosition",
+        "relatedPoliticalPerson",
+        "politicalRelatedPersonPosition",
+        "canAcceptFxRisk",
+        "canAcceptDerivativeInvestment",
+        "fatca",
+        "fatcaDeclarationDate",
+        "cddScore",
+        "cddDate",
+        "referralPerson",
+        "applicationDate",
+        "incomeSourceCountry",
+        "acceptedBy",
+        "openFundConnextFormFlag",
+        "approvedDate",
+        "approvedDateTime",
+        "openChannel",
+        "investorClass",
+        "vulnerableFlag",
+        "vulnerableDetail",
+        "ndidFlag",
+        "ndidRequestId",
+        "investorType",
+        # "knowledgeAssessmentForm",
+        "knowledgeAssessmentResult",
+        ]
+        
+        return cols
+    except requests.exceptions.RequestException as e:
+        logging.error(f"get fund profile columns {e}")
+        raise AirflowException(f"Failed to get token: {e}")
+
+def getAccountCols():
+    try:
+        cols = [
+            "identificationCardType",
+            "passportCountry",
+            "cardNumber",
+            "accountId",
+            "icLicense",
+            "accountOpenDate",
+            "investmentObjective",
+            "investmentObjectiveOther",
+            "approvedDate",
+            "mailingAddressSameAsFlag",
+        ]
+        
+        return cols
+    except requests.exceptions.RequestException as e:
+        logging.error(f"get fund profile columns {e}")
+        raise AirflowException(f"Failed to get token: {e}")
+
+def getUnitholderCols():
+    try:
+        cols = [
+            "accountId",
+            "unitholderId",
+            "unitholderType",
+            "amcCode",
+            "status",
+            "currency",
+        ]
+        
+        return cols
+    except requests.exceptions.RequestException as e:
+        logging.error(f"get fund profile columns {e}")
+        raise AirflowException(f"Failed to get token: {e}")
+    
+def getBankAccountCols():
+    try:
+        cols = [
+            "accountId",
+            "bankCode",
+            "bankBranchCode",
+            "bankAccountNo",
+            "default",
+            "currency",
+            "saReferenceLog",
+            "ddrTimestampReference",
+            "Purpose",
+        ]
+        
+        return cols
+    except requests.exceptions.RequestException as e:
+        logging.error(f"get fund profile columns {e}")
+        raise AirflowException(f"Failed to get token: {e}")
+    
+def getAddressCols():
+    try:
+        cols = [
+            "cardNumber",
+            "addrType",
+            "no",
+            "floor",
+            "building",
+            "roomNo",
+            "soi",
+            "road",
+            "moo",
+            "subdistrict",
+            "district",
+            "province",
+            "postalCode",
+            "country",
+        ]
+        
+        return cols
+    except requests.exceptions.RequestException as e:
+        logging.error(f"get fund profile columns {e}")
+        raise AirflowException(f"Failed to get token: {e}")
+    
+def getSuitCols():
+    try:
+        cols = [
+            "cardNumber",
+            "suitabilityEvaluationDate",
+            "suitabilityRiskLevel",
+            "suitNo1",
+            "suitNo2",
+            "suitNo3",
+            "suitNo4",
+            "suitNo5",
+            "suitNo6",
+            "suitNo7",
+            "suitNo8",
+            "suitNo9",
+            "suitNo10",
+            "suitNo11",
+            "suitNo12",
+        ]
+        
+        return cols
+    except requests.exceptions.RequestException as e:
+        logging.error(f"get fund profile columns {e}")
+        raise AirflowException(f"Failed to get token: {e}")
+
+def getCrsCols():
+    try:
+        cols = [
+            "cardNumber",
+            "tin",
+            "reason",
+            "reasonDesc",
+            "countryOfTaxResidence",
+            "placeOfBirthCountry",
+            "placeOfBirthCity",
+            "taxResidenceInCountriesOtherThanTheUS",    
+            "declarationDate",
+        ]
+        
+        return cols
+    except requests.exceptions.RequestException as e:
+        logging.error(f"get fund profile columns {e}")
+        raise AirflowException(f"Failed to get token: {e}")

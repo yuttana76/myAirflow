@@ -167,6 +167,8 @@ with DAG(
     schedule_interval="0 17 * * 1-5",
     catchup=False,
     on_failure_callback=notify_teams,
+    tags=['FNC', 'NAV', 'evening '], #add tags for better organization
+
 ) as dag:
 
     task1 = PythonOperator(

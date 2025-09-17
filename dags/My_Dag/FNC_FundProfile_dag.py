@@ -113,7 +113,6 @@ def T_postgres_upsert_dataframe(fileName):
         """
 
         logging.debug(f"SQL query: {sql}")
-
         conn_params = {
             "host": Variable.get("POSTGRES_FCN_HOST"),
             "database": Variable.get("POSTGRES_FCN_DB"),
@@ -149,7 +148,7 @@ with DAG(
         task_id='getToken',
         python_callable=T_GetToken,
         do_xcom_push=True
-    )
+    )   
 
     task2 = PythonOperator(
         task_id='downloadFiles',
