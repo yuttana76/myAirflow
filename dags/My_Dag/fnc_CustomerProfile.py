@@ -456,7 +456,7 @@ with DAG(
     task3 = PythonOperator(
         task_id='postgres_upsert',
         python_callable=T_custProfile_db,
-        op_kwargs={'fileName': '20250319_MPS_INDIVIDUAL.json'},
+        op_kwargs={'fileName': '20250916_MPS_INDIVIDUAL.json'},
         on_failure_callback=notify_teams,
     )
 

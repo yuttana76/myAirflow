@@ -15,13 +15,13 @@ from airflow.models import Variable
 import psycopg2
 import logging
 
-from My_Dag.utils.fundconnext_util import getFundConnextToken, getFundProfileCols
+from My_Dag.utils.fundconnext_util import getFundConnextToken, getNavColsV2
 
 
 # get dag directory path (this might not be needed if you use Airflow's standard DAG folder structure)
 dag_path = os.getcwd()
 
-fileType = "FundProfile"
+fileType = "UnitholderBalance"
 rawDataPath = Path(f'{dag_path}/data/raw_data/fnc')
 processDataPath = Path(f'{dag_path}/data/processed_data/fnc')
 extract_path = rawDataPath
@@ -45,7 +45,11 @@ def T_GetToken():
 def T_DownloadFile(token, fileType):
     logging.info(f"downloadFile fileType:{fileType}")
     download_file_path = f"{rawDataPath}/{fileType}.zip"
-    businessDate = datetime.now().strftime("%Y%m%d")  # Use current date for robustness
+
+    yesterday = datetime.now() - timedelta(days=1)
+    businessDate = yesterday.strftime("%Y%m%d") 
+
+    # businessDate = datetime.now().strftime("%Y%m%d")  # Use current date for robustness
 
     try:
         url = Variable.get("FC_API_URL") + f"/api/files/{businessDate}/{fileType}.zip"
@@ -91,28 +95,49 @@ def T_postgres_upsert_dataframe(fileName):
         
         # df.columns = df.iloc[0] #Get Column name from the first row
         # df = df[1:] # Remove First row
-        df.columns =  getFundProfileCols()
+        # df.columns =  getNavColsV3()   #Support Nav V3 only
+        df.columns =  getNavColsV2()
         
         # Remove column Filler
-        df.drop(columns=["Filler"],inplace=True)
+        df.drop(columns=["filler"],inplace=True)
 
-        df.fillna("", inplace=True)
+        # df.fillna("", inplace=True)
         df.drop_duplicates(inplace=True)
 
+
+        # ??????????
+
+        empty_strings_in_numeric_cols = df[df.select_dtypes(include=['number']).astype(str).apply(lambda x: x == "").any(axis=1)]
+        # print(f"*Empty strings in numeric columns:\n{empty_strings_in_numeric_cols}")  #Print rows containing empty strings in numeric columns
+
+
+        # numeric_cols = ['aum', 'nav', 'offer_nav', 'bid_nav', 'switch_out_nav', 'switch_in_nav', 'total_unit', 'total_aum_all_share_class', 'total_unit_all_share_class']
+        # df[empty_strings_in_numeric_cols] = df[empty_strings_in_numeric_cols].fillna(pd.NA)
+
+        # numeric_cols = ['aum', 'nav', 'offer_nav', 'bid_nav', 'switch_out_nav', 'switch_in_nav', 'total_unit', 'total_aum_all_share_class', 'total_unit_all_share_class']
+        df[empty_strings_in_numeric_cols] = df[empty_strings_in_numeric_cols].fillna(0)
+
+        # ??????????
+        #Convert nav_date to datetime object, ensuring correct format is used and handled for null values
+        df['nav_date'] = pd.to_datetime(df['nav_date'], format='%Y%m%d', errors='coerce')
+
+        #Handle potential errors from date conversion.  You might want a more sophisticated error handling strategy depending on your data quality.
+        # df['nav_date'] = df['nav_date'].dt.date  #Extract date only (removes time component)
+
         cols = tuple(df.columns)
-        
-        # update_set_clause = ", ".join([f'"stg_fnc_fundProfile".{col} = EXCLUDED.{col}' for col in cols[1:]])
+
         update_set_clause = ", ".join([f'{col} = EXCLUDED.{col}' for col in cols[1:]])
         placeholders = ', '.join(['%s'] * len(cols))
         
         sql = f"""
-            INSERT INTO "stg_fnc_fundProfile" ({', '.join(cols)}, createdDT, updateDT)
-            VALUES ({placeholders}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            ON CONFLICT (fund_code) DO UPDATE
-            SET {update_set_clause}, updateDT = CURRENT_TIMESTAMP;
+            INSERT INTO "stg_fnc_nav" ({', '.join(cols)},createdt,updatedt)
+            VALUES ({placeholders},CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
+            ON CONFLICT (amc_code,fund_code,nav_date) DO UPDATE
+            SET {update_set_clause}, updatedt = CURRENT_TIMESTAMP;
         """
 
         logging.debug(f"SQL query: {sql}")
+
         conn_params = {
             "host": Variable.get("POSTGRES_FCN_HOST"),
             "database": Variable.get("POSTGRES_FCN_DB"),
@@ -137,32 +162,36 @@ def T_postgres_upsert_dataframe(fileName):
         raise AirflowException(f"An unexpected error occurred: {e}")
 
 with DAG(
-    'dw_fnc_fundprofile',
-    start_date=days_ago(1),  #More robust
+    'fnc_dwn_unitholderBalance',
+    #start_date=days_ago(1),  #More robust
+    start_date=datetime.now(),
     schedule_interval="0 8 * * 1-5",
     catchup=False,
     on_failure_callback=notify_teams,
+    tags=['FundConnext',], #add tags for better organization
+
 ) as dag:
 
     task1 = PythonOperator(
-        task_id='getToken',
+        task_id='getToken_evening',
         python_callable=T_GetToken,
         do_xcom_push=True
-    )   
+    )
 
     task2 = PythonOperator(
-        task_id='downloadFiles',
+        task_id='dwn_fnc_unitholderBalance',
         python_callable=T_DownloadFile,
-        op_kwargs={'token': '{{ ti.xcom_pull(task_ids="getToken") }}', 'fileType': fileType},
+        op_kwargs={'token': '{{ ti.xcom_pull(task_ids="getToken_evening") }}', 'fileType': fileType},
         on_failure_callback=notify_teams,
     )
 
     task3 = PythonOperator(
-        task_id='postgres_upsert',
+        task_id='pg_upsert_unitholderBalance',
         python_callable=T_postgres_upsert_dataframe,
-        op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="downloadFiles") }}'},
+        op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="downloadFiles_evening") }}'},
         on_failure_callback=notify_teams,
     )
 
-    task1 >> task2 >> task3
+    task1 >> task2 
+    # task1 >> task2 >> task3
 
