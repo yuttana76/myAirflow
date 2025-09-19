@@ -138,7 +138,8 @@ def T_postgres_upsert_dataframe(fileName):
 
 with DAG(
     'fnc_dw_fundProfile',
-    start_date=days_ago(1),  #More robust
+    # start_date=days_ago(1),  #More robust
+    start_date=datetime.now(),
     schedule_interval="0 8 * * 1-5",
     catchup=False,
     on_failure_callback=notify_teams,

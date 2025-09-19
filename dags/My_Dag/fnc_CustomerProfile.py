@@ -427,7 +427,8 @@ def customerProfile_db(person_list,account_list = None,unitholder_list = None,ac
 
 with DAG(
     'fnc_CustomerProfileIND',
-    start_date=days_ago(1),  #More robust
+    # start_date=days_ago(1),  #More robust
+    start_date=datetime.now(),
     schedule_interval="0 8 * * 1-5",
     catchup=False,
     on_failure_callback=notify_teams,
