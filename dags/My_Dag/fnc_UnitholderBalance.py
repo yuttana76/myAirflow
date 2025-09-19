@@ -15,13 +15,13 @@ from airflow.models import Variable
 import psycopg2
 import logging
 
-from My_Dag.utils.fundconnext_util import getFundConnextToken, getNavColsV2
+from My_Dag.utils.fundconnext_util import getFundConnextToken, getBalanceCols
 
 
 # get dag directory path (this might not be needed if you use Airflow's standard DAG folder structure)
 dag_path = os.getcwd()
 
-fileType = "UnitholderBalance"
+
 rawDataPath = Path(f'{dag_path}/data/raw_data/fnc')
 processDataPath = Path(f'{dag_path}/data/processed_data/fnc')
 extract_path = rawDataPath
@@ -96,16 +96,16 @@ def T_postgres_upsert_dataframe(fileName):
         # df.columns = df.iloc[0] #Get Column name from the first row
         # df = df[1:] # Remove First row
         # df.columns =  getNavColsV3()   #Support Nav V3 only
-        df.columns =  getNavColsV2()
+        df.columns =  getBalanceCols()
         
         # Remove column Filler
-        df.drop(columns=["filler"],inplace=True)
+        # df.drop(columns=["filler"],inplace=True)
 
+        # Replase  na with empty string
         # df.fillna("", inplace=True)
-        df.drop_duplicates(inplace=True)
 
-
-        # ??????????
+        # Remove duplicate row
+        # df.drop_duplicates(inplace=True)
 
         empty_strings_in_numeric_cols = df[df.select_dtypes(include=['number']).astype(str).apply(lambda x: x == "").any(axis=1)]
         # print(f"*Empty strings in numeric columns:\n{empty_strings_in_numeric_cols}")  #Print rows containing empty strings in numeric columns
@@ -117,12 +117,9 @@ def T_postgres_upsert_dataframe(fileName):
         # numeric_cols = ['aum', 'nav', 'offer_nav', 'bid_nav', 'switch_out_nav', 'switch_in_nav', 'total_unit', 'total_aum_all_share_class', 'total_unit_all_share_class']
         df[empty_strings_in_numeric_cols] = df[empty_strings_in_numeric_cols].fillna(0)
 
-        # ??????????
         #Convert nav_date to datetime object, ensuring correct format is used and handled for null values
         df['nav_date'] = pd.to_datetime(df['nav_date'], format='%Y%m%d', errors='coerce')
-
-        #Handle potential errors from date conversion.  You might want a more sophisticated error handling strategy depending on your data quality.
-        # df['nav_date'] = df['nav_date'].dt.date  #Extract date only (removes time component)
+        # print(f'**Converted nav_date column:\n{df["nav_date"].head()}')
 
         cols = tuple(df.columns)
 
@@ -130,13 +127,13 @@ def T_postgres_upsert_dataframe(fileName):
         placeholders = ', '.join(['%s'] * len(cols))
         
         sql = f"""
-            INSERT INTO "stg_fnc_nav" ({', '.join(cols)},createdt,updatedt)
+            INSERT INTO "stg_fnc_unitbalance" ({', '.join(cols)},createdt,updatedt)
             VALUES ({placeholders},CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
-            ON CONFLICT (amc_code,fund_code,nav_date) DO UPDATE
+            ON CONFLICT (amc_code, accountId,unitholderId,fundCode,nav_date) DO UPDATE
             SET {update_set_clause}, updatedt = CURRENT_TIMESTAMP;
         """
 
-        logging.debug(f"SQL query: {sql}")
+        # logging.info(f"SQL query: {sql}")
 
         conn_params = {
             "host": Variable.get("POSTGRES_FCN_HOST"),
@@ -155,21 +152,22 @@ def T_postgres_upsert_dataframe(fileName):
                 logging.info(f"Upsert operation completed successfully.")
 
     except (psycopg2.Error, pd.errors.EmptyDataError, pd.errors.ParserError) as e:
-        logging.error(f"Database error: {e}")
+        logging.error(e)
+        print(f"Database error: {e}")
+
         raise AirflowException(f"Database operation failed: {e}")
     except Exception as e:
         logging.exception(f"An unexpected error occurred: {e}")
         raise AirflowException(f"An unexpected error occurred: {e}")
 
 with DAG(
-    'fnc_dwn_unitholderBalance',
+    'fnc_dw_unitholderBalance',
     #start_date=days_ago(1),  #More robust
     start_date=datetime.now(),
     schedule_interval="0 8 * * 1-5",
     catchup=False,
     on_failure_callback=notify_teams,
-    tags=['FundConnext',], #add tags for better organization
-
+    tags=['FundConnext',],
 ) as dag:
 
     task1 = PythonOperator(
@@ -177,7 +175,8 @@ with DAG(
         python_callable=T_GetToken,
         do_xcom_push=True
     )
-
+    
+    fileType = "UnitholderBalance"
     task2 = PythonOperator(
         task_id='dwn_fnc_unitholderBalance',
         python_callable=T_DownloadFile,
@@ -189,9 +188,10 @@ with DAG(
         task_id='pg_upsert_unitholderBalance',
         python_callable=T_postgres_upsert_dataframe,
         op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="downloadFiles_evening") }}'},
+        # op_kwargs={'fileName': '20250917_MPS_UNITHOLDERBALANCE.txt'},
         on_failure_callback=notify_teams,
     )
 
-    task1 >> task2 
-    # task1 >> task2 >> task3
+    # task3
+    task1 >> task2 >> task3
 

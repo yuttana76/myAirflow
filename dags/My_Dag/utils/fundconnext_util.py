@@ -199,8 +199,62 @@ def getNavColsV3():
         
         return cols
     except requests.exceptions.RequestException as e:
-        logging.error(f"get fund profile columns {e}")
-        raise AirflowException(f"Failed to get token: {e}")
+        logging.error(f"get fund NAV columns {e}")
+        raise AirflowException(f"Failed to get NAV: {e}")
+
+def getNavColsV3():
+    try:
+        cols = [
+            "amc_code",
+            "fund_code",
+            "aum",
+            "nav",
+            "offer_nav",
+            "bid_nav",
+            "switch_out_nav",
+            "switch_in_nav",
+            "nav_date",
+            "sa_code_for_unit_link",
+            "total_unit",
+            "total_aum_all_share_class",
+            "total_unit_all_share_class",
+            "filler",
+            "filler",
+            "filler",
+            "filler",
+            "filler",
+            "filler",
+            "filler"
+        ]
+        
+        return cols
+    except requests.exceptions.RequestException as e:
+        logging.error(f"get NAV columns {e}")
+        raise AirflowException(f"Failed to get NAV: {e}")
+    
+def getBalanceCols():
+    try:
+        cols = [
+            'amc_code',
+            'accountId',
+            'unitholderId',
+            'fundCode',
+            'unitBalance',
+            'amount',
+            'availableUnitBalance',
+            'availableAmount',
+            'pendingUnit',
+            'pendingAmount',
+            'pledgeUnit',
+            'averageCost',
+            'nav',
+            'nav_date'
+        ]
+        
+        return cols
+    except requests.exceptions.RequestException as e:
+        logging.error(f"get fund Balance columns {e}")
+        raise AirflowException(f"Failed to get Balance: {e}")
     
 
 def getCustomerINDCols():
