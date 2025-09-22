@@ -15,7 +15,7 @@ from airflow.models import Variable
 import psycopg2
 import logging
 
-from My_Dag.utils.fundconnext_util import getFundConnextToken, getNavColsV2
+from My_Dag.utils.fundconnext_util import getFundConnextToken, getNavColsV3
 
 
 # get dag directory path (this might not be needed if you use Airflow's standard DAG folder structure)
@@ -95,8 +95,8 @@ def T_postgres_upsert_dataframe(fileName):
         
         # df.columns = df.iloc[0] #Get Column name from the first row
         # df = df[1:] # Remove First row
-        # df.columns =  getNavColsV3()   #Support Nav V3 only
-        df.columns =  getNavColsV2()
+        df.columns =  getNavColsV3()   #Support Nav V3 only
+        # df.columns =  getNavColsV2()
         
         # Remove column Filler
         df.drop(columns=["filler"],inplace=True)
@@ -188,9 +188,11 @@ with DAG(
     task3 = PythonOperator(
         task_id='pg_upsert_evening',
         python_callable=T_postgres_upsert_dataframe,
-        op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="downloadFiles_evening") }}'},
+        # op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="downloadFiles_evening") }}'},
+        op_kwargs={'fileName': '20250918_MPS_NAV.txt'},
         on_failure_callback=notify_teams,
     )
 
-    task1 >> task2 >> task3
+    # task1 >> task2 >> task3
+    # task3
 
