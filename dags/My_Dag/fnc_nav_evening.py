@@ -50,17 +50,21 @@ def T_DownloadFile(token, fileType):
     to = datetime.now()
     if to.weekday() == 0:  # Monday
         businessDate = (to - timedelta(days=3)).strftime("%Y%m%d")  # Get last Friday's date
+    else:
+        #Download date is yesterday
+        yesterday = datetime.now() - timedelta(days=1)
+        businessDate = yesterday.strftime("%Y%m%d") 
 
-    yesterday = datetime.now() - timedelta(days=1)
-    businessDate = yesterday.strftime("%Y%m%d") 
-
+    # Override businessDate if CUSTOM_FNC_DATE is set (for testing purposes)
+    if Variable.get("CUSTOM_FNC_DATE") is not None:
+        businessDate = Variable.get("CUSTOM_FNC_DATE")
 
     # businessDate = datetime.now().strftime("%Y%m%d")  # Use current date for robustness
 
     try:
         url = Variable.get("FC_API_URL") + f"/api/files/{businessDate}/{fileType}.zip"
         logging.info(f"Downloading from URL: {url}")
-        
+
         headers = {
             "X-Auth-Token": token,
             "Content-Type": "application/json"
