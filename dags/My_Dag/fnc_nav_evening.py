@@ -46,13 +46,21 @@ def T_DownloadFile(token, fileType):
     logging.info(f"downloadFile fileType:{fileType}")
     download_file_path = f"{rawDataPath}/{fileType}.zip"
 
+    # If today is monday get date of friday
+    to = datetime.now()
+    if to.weekday() == 0:  # Monday
+        businessDate = (to - timedelta(days=3)).strftime("%Y%m%d")  # Get last Friday's date
+
     yesterday = datetime.now() - timedelta(days=1)
     businessDate = yesterday.strftime("%Y%m%d") 
+
 
     # businessDate = datetime.now().strftime("%Y%m%d")  # Use current date for robustness
 
     try:
         url = Variable.get("FC_API_URL") + f"/api/files/{businessDate}/{fileType}.zip"
+        logging.info(f"Downloading from URL: {url}")
+        
         headers = {
             "X-Auth-Token": token,
             "Content-Type": "application/json"
@@ -188,11 +196,11 @@ with DAG(
     task3 = PythonOperator(
         task_id='pg_upsert_evening',
         python_callable=T_postgres_upsert_dataframe,
-        # op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="downloadFiles_evening") }}'},
-        op_kwargs={'fileName': '20250918_MPS_NAV.txt'},
+        op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="downloadFiles_evening") }}'},
+        # op_kwargs={'fileName': '20250918_MPS_NAV.txt'},
         on_failure_callback=notify_teams,
     )
 
-    # task1 >> task2 >> task3
+    task1 >> task2 >> task3
     # task3
 
