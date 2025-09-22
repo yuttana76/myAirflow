@@ -56,7 +56,9 @@ def T_DownloadFile(token, fileType):
         businessDate = yesterday.strftime("%Y%m%d") 
 
     # Override businessDate if CUSTOM_FNC_DATE is set (for testing purposes)
-    if Variable.get("CUSTOM_FNC_DATE") is not None:
+    # check CUSTOM_FNC_DATE is exists
+    # if Variable.get("CUSTOM_FNC_DATE") and  Variable.get("CUSTOM_FNC_DATE") is not None:
+    if Variable.get("CUSTOM_FNC_DATE", default_var=None) is not None:
         businessDate = Variable.get("CUSTOM_FNC_DATE")
 
     # businessDate = datetime.now().strftime("%Y%m%d")  # Use current date for robustness
