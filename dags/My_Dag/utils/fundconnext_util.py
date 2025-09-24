@@ -256,6 +256,76 @@ def getBalanceCols():
         logging.error(f"get fund Balance columns {e}")
         raise AirflowException(f"Failed to get Balance: {e}")
     
+def getAllottedCols():
+    try:
+        cols = [
+            'saRefer',
+            'transactionDT',
+            'accountId',
+            'amc_code',
+            'unitHholderId',
+            'filler',
+            'transactionCode',
+            'fundCode',
+            'overrideRiskFlag',
+            'overrideFXRiskFlag',
+            'redemtrionType',
+            'amont',
+            'unit',
+            'effectiveDate',
+            'filler',
+            'dummyCustomer',
+            'paymentType',
+            'bankCode',
+            'bankAccount',
+            'chequeNo',
+            'chequeDate',
+            'Iclicense',
+            'branchNo',
+            'channel',
+            'forceEntry',
+            'LTFcondition',
+            'resonToSellLTF',
+            'rmfCapital_wo_tax',
+            'rmfCapital_redeem',
+            'autoRedeem',
+            'transactionId',
+            'status',
+            'amc_ref',
+            'allotmentDate',
+            'allottedNAV',
+            'allottedAmount',
+            'allottedUnit',
+            'fee',
+            'withholdingTax',
+            'vat',
+            'brokerageFee',
+            'withholdingTaxLTFRMF',
+            'amcPayDate',
+            'registrarFlag',
+            'allFlag',
+            'settlementBank',
+            'settlementAccount',
+            'rejectReason',
+            'CHQBranvh',
+            'invoiceNo',
+            'amcReference',
+            'ICCode',
+            'brokerVAT',
+            'approvalCode',
+            'nav_date',
+            'collateralAccount',
+            'creditCardIssuer',
+            'originalTranId',
+            'adlsFee',
+            'liquidFee'
+        ]
+        
+        return cols
+    except requests.exceptions.RequestException as e:
+        logging.error(f"get fund Balance columns {e}")
+        raise AirflowException(f"Failed to get Balance: {e}")
+
 
 def getCustomerINDCols():
     try:

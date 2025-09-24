@@ -46,9 +46,19 @@ def T_DownloadFile(token, fileType):
     logging.info(f"downloadFile fileType:{fileType}")
     download_file_path = f"{rawDataPath}/{fileType}.zip"
 
-    yesterday = datetime.now() - timedelta(days=1)
-    businessDate = yesterday.strftime("%Y%m%d") 
+    # If today is monday get date of friday
+    to = datetime.now()
+    if to.weekday() == 0:  # Monday
+        businessDate = (to - timedelta(days=3)).strftime("%Y%m%d")  # Get last Friday's date
+    else:
+        #Download date is yesterday
+        yesterday = datetime.now() - timedelta(days=1)
+        businessDate = yesterday.strftime("%Y%m%d") 
 
+    # Override businessDate if CUSTOM_FNC_DATE is set (for testing purposes)
+    # check CUSTOM_FNC_DATE is exists
+    if Variable.get("CUSTOM_FNC_DATE", default_var=None) is not None:
+        businessDate = Variable.get("CUSTOM_FNC_DATE")
     # businessDate = datetime.now().strftime("%Y%m%d")  # Use current date for robustness
 
     try:
