@@ -195,28 +195,28 @@ with DAG(
     tags=['FundConnext',],
 ) as dag:
 
-    # task1 = PythonOperator(
-    #     task_id='getToken_evening',
-    #     python_callable=T_GetToken,
-    #     do_xcom_push=True
-    # )
+    task1 = PythonOperator(
+        task_id='getToken_evening',
+        python_callable=T_GetToken,
+        do_xcom_push=True
+    )
     
-    # fileType = "AllottedTransactions"
-    # task2 = PythonOperator(
-    #     task_id='dwn_fnc_unitholderBalance',
-    #     python_callable=T_DownloadFile,
-    #     op_kwargs={'token': '{{ ti.xcom_pull(task_ids="getToken_evening") }}', 'fileType': fileType},
-    #     on_failure_callback=notify_teams,
-    # )
+    fileType = "AllottedTransactions"
+    task2 = PythonOperator(
+        task_id='dwn_fnc_unitholderBalance',
+        python_callable=T_DownloadFile,
+        op_kwargs={'token': '{{ ti.xcom_pull(task_ids="getToken_evening") }}', 'fileType': fileType},
+        on_failure_callback=notify_teams,
+    )
 
     task3 = PythonOperator(
         task_id='pg_upsert_unitholderBalance',
         python_callable=T_postgres_upsert_dataframe,
-        # op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="dwn_fnc_unitholderBalance") }}'},
-        op_kwargs={'fileName': '20250922_MPS_ALLOTTEDTRANSACTIONS.txt'},
+        op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="dwn_fnc_unitholderBalance") }}'},
+        # op_kwargs={'fileName': '20250922_MPS_ALLOTTEDTRANSACTIONS.txt'},
         on_failure_callback=notify_teams,
     )
 
-    task3
-    # task1 >> task2 >> task3
+    # task3
+    task1 >> task2 >> task3
 
