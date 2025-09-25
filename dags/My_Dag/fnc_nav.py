@@ -173,9 +173,8 @@ def T_postgres_upsert_dataframe(fileName):
         raise AirflowException(f"An unexpected error occurred: {e}")
 
 with DAG(
-    'fnc_dw_NAV_evening',
-    # start_date=days_ago(1),  #More robust
-    start_date=datetime.now(),
+    'fnc_dw_NAV',
+    start_date=days_ago(1),  #More robust
     schedule_interval="0 17 * * 1-5",
     catchup=False,
     on_failure_callback=notify_teams,

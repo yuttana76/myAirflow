@@ -56,9 +56,10 @@ def T_DownloadFile(token, fileType):
         businessDate = yesterday.strftime("%Y%m%d") 
 
     # Override businessDate if CUSTOM_FNC_DATE is set (for testing purposes)
-    # check CUSTOM_FNC_DATE is exists
+    # CUSTOM_FNC_DATE is exists
     if Variable.get("CUSTOM_FNC_DATE", default_var=None) is not None:
         businessDate = Variable.get("CUSTOM_FNC_DATE")
+        
     # businessDate = datetime.now().strftime("%Y%m%d")  # Use current date for robustness
 
     try:
@@ -120,13 +121,6 @@ def T_postgres_upsert_dataframe(fileName):
 
         #To text
         # df['unitHholderId'] = df['unitHholderId'].astype(str)
-        # df['bankCode'] = df['bankCode'].astype(str)
-        # df['bankAccount'] = df['bankAccount'].astype(str)
-        # df['chequeNo'] = df['chequeNo'].astype(str)
-        # df['Iclicense'] = df['Iclicense'].astype(str)
-        # df['branchNo'] = df['branchNo'].astype(str)
-        # df['resonToSellLTF'] = df['resonToSellLTF'].astype(str)
-        # logging.info(f"resonToSellLTF: {df['resonToSellLTF']}")
 
         # Replace  na with empty string
         # df.fillna("", inplace=True)
@@ -206,8 +200,7 @@ def T_postgres_upsert_dataframe(fileName):
 
 with DAG(
     'fnc_dw_AllotedTransaction',
-    #start_date=days_ago(1),  #More robust
-    start_date=datetime.now(),
+    start_date=days_ago(1),  #More robust
     schedule_interval="0 8 * * 1-5",
     catchup=False,
     on_failure_callback=notify_teams,
