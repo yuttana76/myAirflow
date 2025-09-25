@@ -59,7 +59,7 @@ def T_DownloadFile(token, fileType):
     # CUSTOM_FNC_DATE is exists
     if Variable.get("CUSTOM_FNC_DATE", default_var=None) is not None:
         businessDate = Variable.get("CUSTOM_FNC_DATE")
-        
+
     # businessDate = datetime.now().strftime("%Y%m%d")  # Use current date for robustness
 
     try:
