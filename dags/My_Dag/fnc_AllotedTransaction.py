@@ -101,7 +101,13 @@ def T_DownloadFile(token, fileType):
 def T_postgres_upsert_dataframe(fileName):
     logging.info(f"T_postgres_upsert_dataframe. {fileName}")
     try:
-        df = pd.read_csv(f"{rawDataPath}/{fileName}", skiprows=1, header=None, sep='|')
+
+        dtype={"id": int, "price": float}
+
+        # Read the CSV file into a DataFrame and no data is null
+        # df = pd.read_csv(f"{rawDataPath}/{fileName}", skiprows=1, header=None, dtype=str, sep='|', na_filter=False)
+        df = pd.read_csv(f"{rawDataPath}/{fileName}", skiprows=1, header=None, dtype=str, sep='|')
+        # df = pd.read_csv(f"{rawDataPath}/{fileName}", skiprows=1, header=None, sep='|')
         
         # df.columns = df.iloc[0] #Get Column name from the first row
         # df = df[1:] # Remove First row
@@ -111,6 +117,16 @@ def T_postgres_upsert_dataframe(fileName):
         
         # Remove column Filler
         df.drop(columns=["filler"],inplace=True)
+
+        #To text
+        # df['unitHholderId'] = df['unitHholderId'].astype(str)
+        # df['bankCode'] = df['bankCode'].astype(str)
+        # df['bankAccount'] = df['bankAccount'].astype(str)
+        # df['chequeNo'] = df['chequeNo'].astype(str)
+        # df['Iclicense'] = df['Iclicense'].astype(str)
+        # df['branchNo'] = df['branchNo'].astype(str)
+        # df['resonToSellLTF'] = df['resonToSellLTF'].astype(str)
+        # logging.info(f"resonToSellLTF: {df['resonToSellLTF']}")
 
         # Replace  na with empty string
         # df.fillna("", inplace=True)
@@ -139,9 +155,10 @@ def T_postgres_upsert_dataframe(fileName):
         df['nav_date'] = df['nav_date'].replace({pd.NaT: None})
 
         import numpy as np
-
         df = df.replace({np.nan: None})
 
+        # replaece 'nan' string with None
+        df = df.replace({'nan': None})
 
         # write df to csv file
         df.to_csv(f"{processDataPath}/unitholderBalance.csv", index=False)
@@ -157,7 +174,6 @@ def T_postgres_upsert_dataframe(fileName):
             SET {update_set_clause}, updatedt = CURRENT_TIMESTAMP;
         """
 
-        logging.info(f"SQL query: {sql}")
 
         conn_params = {
             "host": Variable.get("POSTGRES_FCN_HOST"),
@@ -171,14 +187,17 @@ def T_postgres_upsert_dataframe(fileName):
             with conn.cursor() as cur:
                 data = [tuple(row) for row in df.values]  #Convert DataFrame to list of tuple
                 
+                logging.info(f"SQL query: {sql}")
                 logging.info(f"** data: {data}")
 
                 cur.executemany(sql, data)
                 conn.commit()
                 logging.info(f"Upsert operation completed successfully.")
 
-    except (psycopg2.Error, pd.errors.EmptyDataError, pd.errors.ParserError) as e:
+    # except (psycopg2.Error, pd.errors.EmptyDataError, pd.errors.ParserError) as e:
+    except psycopg2.DataError as e:
         logging.error(e)
+
         #show error messsge
         raise AirflowException(f"Database operation failed: {e}")
     except Exception as e:
@@ -213,10 +232,9 @@ with DAG(
         task_id='pg_upsert_unitholderBalance',
         python_callable=T_postgres_upsert_dataframe,
         op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="dwn_fnc_unitholderBalance") }}'},
-        # op_kwargs={'fileName': '20250922_MPS_ALLOTTEDTRANSACTIONS.txt'},
+        # op_kwargs={'fileName': '20250923_MPS_ALLOTTEDTRANSACTIONS.txt'},
         on_failure_callback=notify_teams,
     )
 
     # task3
     task1 >> task2 >> task3
-
