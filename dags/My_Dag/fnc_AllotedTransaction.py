@@ -103,10 +103,25 @@ def T_postgres_upsert_dataframe(fileName):
     logging.info(f"T_postgres_upsert_dataframe. {fileName}")
     try:
 
-        dtype={"id": int, "price": float}
-
         # Read the CSV file into a DataFrame and no data is null
         # df = pd.read_csv(f"{rawDataPath}/{fileName}", skiprows=1, header=None, dtype=str, sep='|', na_filter=False)
+
+        # dfrow1 = pd.read_csv(f"{rawDataPath}/{fileName}", nrows=1,sep='|')
+        # logging.info(f"dfrow1>>{dfrow1}")
+        # first_row= dfrow1.iloc[0]
+        
+        # file_path = "/Users/mpamdev03/projects/python/myAirflow/data/raw_data/fnc/20250923_MPS_ALLOTTEDTRANSACTIONS.txt"
+
+        # Read the file without a header
+        df = pd.read_csv(f"{rawDataPath}/{fileName}", header=None)
+
+        # Get the first row, first column value
+        numData = df.iloc[0, 0].split('|')[2]
+
+        # # Print the value
+        print( "Number of data>> " f"{numData}")
+
+
         df = pd.read_csv(f"{rawDataPath}/{fileName}", skiprows=1, header=None, dtype=str, sep='|')
         # df = pd.read_csv(f"{rawDataPath}/{fileName}", skiprows=1, header=None, sep='|')
         
@@ -168,7 +183,6 @@ def T_postgres_upsert_dataframe(fileName):
             SET {update_set_clause}, updatedt = CURRENT_TIMESTAMP;
         """
 
-
         conn_params = {
             "host": Variable.get("POSTGRES_FCN_HOST"),
             "database": Variable.get("POSTGRES_FCN_DB"),
@@ -180,11 +194,15 @@ def T_postgres_upsert_dataframe(fileName):
         with psycopg2.connect(**conn_params) as conn:
             with conn.cursor() as cur:
                 data = [tuple(row) for row in df.values]  #Convert DataFrame to list of tuple
-                
-                logging.info(f"SQL query: {sql}")
-                logging.info(f"** data: {data}")
-
                 cur.executemany(sql, data)
+
+                #Get number of rows affected
+                rows_affected = cur.rowcount
+                logging.info(f"Number of rows affected: {rows_affected} of {numData}")
+
+                if rows_affected != int(numData):
+                    raise AirflowException("Number of rows affected does not match expected count.") 
+
                 conn.commit()
                 logging.info(f"Upsert operation completed successfully.")
 
