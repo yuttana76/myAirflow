@@ -102,10 +102,25 @@ def T_DownloadFile(token, fileType):
 def T_postgres_upsert_dataframe(fileName):
     logging.info(f"T_postgres_upsert_dataframe. {fileName}")
     try:
-        df = pd.read_csv(f"{rawDataPath}/{fileName}", skiprows=1, header=None, sep='|')
-        
-        # df.columns = df.iloc[0] #Get Column name from the first row
-        # df = df[1:] # Remove First row
+        df = pd.read_csv(f"{rawDataPath}/{fileName}", header=None, sep='\t')
+
+        # Get number of data from first row
+        numData = df.iloc[0, 0].split('|')[2]
+        logging.info( "Number of data>> " f"{numData}") 
+
+        # Remove first row
+        df = df[1:].reset_index(drop=True) # Remove First row
+        logging.info(f"Dataframe shape(1): {df.shape}")
+
+        # Split all row in df
+        df = df[0].str.split('|', expand=True)
+
+        # Validate data rows
+        length = df.shape[0]
+        if length != int(numData):
+            raise AirflowException(f"Dataframe length {length} does not match expected count {numData}.")
+
+
         df.columns =  getNavColsV3()   #Support Nav V3 only
         # df.columns =  getNavColsV2()
         
@@ -115,8 +130,12 @@ def T_postgres_upsert_dataframe(fileName):
         # df.fillna("", inplace=True)
         df.drop_duplicates(inplace=True)
 
+        import numpy as np
+        # Replace empty strings in all columns with None
+        df = df.replace({"": None})
 
-        # ??????????
+        # Replace NaN values with None for database compatibility
+        df = df.replace({np.nan: None})
 
         empty_strings_in_numeric_cols = df[df.select_dtypes(include=['number']).astype(str).apply(lambda x: x == "").any(axis=1)]
         # print(f"*Empty strings in numeric columns:\n{empty_strings_in_numeric_cols}")  #Print rows containing empty strings in numeric columns
@@ -162,6 +181,15 @@ def T_postgres_upsert_dataframe(fileName):
                 data = [tuple(row) for row in df.values]  #Convert DataFrame to list of tuple
                 
                 cur.executemany(sql, data)
+
+                #Get number of rows affected
+                rows_affected = cur.rowcount
+                logging.info(f"Number of rows affected: {rows_affected} of {numData}")
+
+                # Validate check if rows affected matches expected count
+                if rows_affected != int(numData):
+                    raise AirflowException("Number of rows affected does not match expected count.") 
+
                 conn.commit()
                 logging.info(f"Upsert operation completed successfully.")
 
@@ -172,13 +200,19 @@ def T_postgres_upsert_dataframe(fileName):
         logging.exception(f"An unexpected error occurred: {e}")
         raise AirflowException(f"An unexpected error occurred: {e}")
 
+default_args = {
+    'owner': 'MPSEC',
+}
 with DAG(
     'fnc_dw_NAV',
-    start_date=days_ago(1),  #More robust
+    # start_date=days_ago(1),  #More robust
+    start_date=datetime(2025, 1, 1),
     schedule_interval="0 17 * * 1-5",
     catchup=False,
     on_failure_callback=notify_teams,
     tags=['FundConnext'], #add tags for better organization
+    description='Download NAV from FundConnext ',
+    default_args=default_args,
 
 ) as dag:
 
@@ -198,8 +232,8 @@ with DAG(
     task3 = PythonOperator(
         task_id='pg_upsert_evening',
         python_callable=T_postgres_upsert_dataframe,
-        op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="downloadFiles_evening") }}'},
-        # op_kwargs={'fileName': '20250918_MPS_NAV.txt'},
+        # op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="downloadFiles_evening") }}'},
+        op_kwargs={'fileName': '20250918_MPS_NAV.txt'},
         on_failure_callback=notify_teams,
     )
 

@@ -23,7 +23,7 @@ dag_path = os.getcwd()
 
 fileType = "FundProfile"
 rawDataPath = Path(f'{dag_path}/data/raw_data/fnc')
-processDataPath = Path(f'{dag_path}/data/processed_data/fnc')
+processDataPath = Path(f'{dag_path}/data/processed_data')
 extract_path = rawDataPath
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -46,7 +46,9 @@ def T_DownloadFile(token, fileType):
     
     logging.info(f"downloadFile fileType:{fileType}")
 
-# If today is monday get date of friday
+    download_file_path = f"{rawDataPath}/{fileType}.zip"
+
+    # If today is monday get date of friday
     to = datetime.now()
     if to.weekday() == 0:  # Monday
         businessDate = (to - timedelta(days=3)).strftime("%Y%m%d")  # Get last Friday's date
@@ -100,10 +102,26 @@ def T_DownloadFile(token, fileType):
 def T_postgres_upsert_dataframe(fileName):
     logging.info(f"T_postgres_upsert_dataframe. {fileName}")
     try:
-        df = pd.read_csv(f"{rawDataPath}/{fileName}", skiprows=1, header=None, sep='|')
-        
-        # df.columns = df.iloc[0] #Get Column name from the first row
-        # df = df[1:] # Remove First row
+        # Read CSV file into DataFrame
+        df = pd.read_csv(f"{rawDataPath}/{fileName}",header=None,dtype=str,sep='\t')
+
+        # Get number of data from first row
+        numData = df.iloc[0, 0].split('|')[1]
+        logging.info( "Number of data>> " f"{numData}") 
+
+        # Remove first row
+        df = df[1:].reset_index(drop=True) # Remove First row
+        logging.info(f"Dataframe shape(1): {df.shape}")
+
+        # Split all row in df
+        df = df[0].str.split('|', expand=True)
+
+        # Validate data rows
+        length = df.shape[0]
+        if length != int(numData):
+            raise AirflowException(f"Dataframe length {length} does not match expected count {numData}.")
+
+        # Assign column names
         df.columns =  getFundProfileCols()
         
         # Remove column Filler
@@ -111,6 +129,11 @@ def T_postgres_upsert_dataframe(fileName):
 
         df.fillna("", inplace=True)
         df.drop_duplicates(inplace=True)
+
+
+        # write df to csv file
+        df.to_csv(f"{processDataPath}/fundProfile.csv", index=False)
+
 
         cols = tuple(df.columns)
         
@@ -139,6 +162,15 @@ def T_postgres_upsert_dataframe(fileName):
                 data = [tuple(row) for row in df.values]  #Convert DataFrame to list of tuple
                 
                 cur.executemany(sql, data)
+
+                #Get number of rows affected
+                rows_affected = cur.rowcount
+                logging.info(f"Number of rows affected: {rows_affected} of {numData}")
+
+                # Validate check if rows affected matches expected count
+                if rows_affected != int(numData):
+                    raise AirflowException("Number of rows affected does not match expected count.") 
+
                 conn.commit()
                 logging.info(f"Upsert operation completed successfully.")
 
@@ -149,13 +181,19 @@ def T_postgres_upsert_dataframe(fileName):
         logging.exception(f"An unexpected error occurred: {e}")
         raise AirflowException(f"An unexpected error occurred: {e}")
 
+default_args = {
+    'owner': 'MPSEC',
+}
+
 with DAG(
     'fnc_dw_fundProfile',
-    start_date=days_ago(1),  #More robust
+    start_date=datetime(2025, 1, 1),
     schedule_interval="0 8 * * 1-5",
     catchup=False,
     on_failure_callback=notify_teams,
-    tags=['FundConnext',],
+    tags=['FundConnext'],
+    description='Download Fund profile from FundConnext ',
+    default_args=default_args,
 ) as dag:
 
     task1 = PythonOperator(
@@ -174,9 +212,11 @@ with DAG(
     task3 = PythonOperator(
         task_id='postgres_upsert',
         python_callable=T_postgres_upsert_dataframe,
-        op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="downloadFiles") }}'},
+        # op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="downloadFiles") }}'},
+        op_kwargs={'fileName': '20251002_MPS_FUND_PROFILE.txt'},
         on_failure_callback=notify_teams,
     )
 
+    # task3
     task1 >> task2 >> task3
 

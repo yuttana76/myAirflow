@@ -101,13 +101,36 @@ def T_DownloadFile(token, fileType):
 def T_postgres_upsert_dataframe(fileName):
     logging.info(f"T_postgres_upsert_dataframe. {fileName}")
     try:
-        df = pd.read_csv(f"{rawDataPath}/{fileName}", skiprows=1, header=None, sep='|')
+        # df = pd.read_csv(f"{rawDataPath}/{fileName}", skiprows=1, header=None, sep='|')
+
+        df = pd.read_csv(f"{rawDataPath}/{fileName}", header=None, sep='\t')
+
+        # Get number of data from first row
+        numData = df.iloc[0, 0].split('|')[2]
+        logging.info( "Number of data>> " f"{numData}") 
+
+        # Remove first row
+        df = df[1:].reset_index(drop=True) # Remove First row
+        logging.info(f"Dataframe shape(1): {df.shape}")
+
+        # Split all row in df
+        df = df[0].str.split('|', expand=True)
+
+        # Validate data rows
+        length = df.shape[0]
+        if length != int(numData):
+            raise AirflowException(f"Dataframe length {length} does not match expected count {numData}.")
+
         
-        # df.columns = df.iloc[0] #Get Column name from the first row
-        # df = df[1:] # Remove First row
-        # df.columns =  getNavColsV3()   #Support Nav V3 only
         df.columns =  getBalanceCols()
         
+        # import numpy as np
+        # # Replace empty strings in all columns with None
+        # df = df.replace({"": None})
+
+        # # Replace NaN values with None for database compatibility
+        # df = df.replace({np.nan: None})
+
         # Remove column Filler
         # df.drop(columns=["filler"],inplace=True)
 
@@ -170,13 +193,20 @@ def T_postgres_upsert_dataframe(fileName):
         logging.exception(f"An unexpected error occurred: {e}")
         raise AirflowException(f"An unexpected error occurred: {e}")
 
+default_args = {
+    'owner': 'MPSEC',
+}
+
 with DAG(
     'fnc_dw_unitholderBalance',
-    start_date=days_ago(1),  #More robust
+    # start_date=days_ago(1),  #More robust
+    start_date=datetime(2025, 1, 1),
     schedule_interval="0 8 * * 1-5",
     catchup=False,
     on_failure_callback=notify_teams,
     tags=['FundConnext',],
+    description='Download the Unitholder banance from FundConnext ',
+    default_args=default_args,
 ) as dag:
 
     task1 = PythonOperator(
@@ -196,8 +226,8 @@ with DAG(
     task3 = PythonOperator(
         task_id='pg_upsert_unitholderBalance',
         python_callable=T_postgres_upsert_dataframe,
-        op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="dwn_fnc_unitholderBalance") }}'},
-        # op_kwargs={'fileName': '20250918_MPS_UNITHOLDERBALANCE.txt'},
+        # op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="dwn_fnc_unitholderBalance") }}'},
+        op_kwargs={'fileName': '20250918_MPS_UNITHOLDERBALANCE.txt'},
         on_failure_callback=notify_teams,
     )
 

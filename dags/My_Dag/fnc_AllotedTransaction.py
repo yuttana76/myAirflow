@@ -102,55 +102,55 @@ def T_DownloadFile(token, fileType):
 def T_postgres_upsert_dataframe(fileName):
     logging.info(f"T_postgres_upsert_dataframe. {fileName}")
     try:
+       
+        # Read the file into a DataFrame
+        df = pd.read_csv(f"{rawDataPath}/{fileName}", header=None, dtype=str,sep='\t')
 
-        # Read the CSV file into a DataFrame and no data is null
-        # df = pd.read_csv(f"{rawDataPath}/{fileName}", skiprows=1, header=None, dtype=str, sep='|', na_filter=False)
-
-        # dfrow1 = pd.read_csv(f"{rawDataPath}/{fileName}", nrows=1,sep='|')
-        # logging.info(f"dfrow1>>{dfrow1}")
-        # first_row= dfrow1.iloc[0]
-        
-        # file_path = "/Users/mpamdev03/projects/python/myAirflow/data/raw_data/fnc/20250923_MPS_ALLOTTEDTRANSACTIONS.txt"
-
-        # Read the file without a header
-        df = pd.read_csv(f"{rawDataPath}/{fileName}", header=None)
-
-        # Get the first row, first column value
+        # Get number of data from first row
         numData = df.iloc[0, 0].split('|')[2]
+        logging.info( "Number of data>> " f"{numData}") 
 
-        # # Print the value
-        print( "Number of data>> " f"{numData}")
+        # Remove first row
+        df = df[1:].reset_index(drop=True) # Remove First row
 
+        # Validate data rows
+        length = df.shape[0]
+        if length != int(numData):
+            raise AirflowException(f"Dataframe length {length} does not match expected count {numData}.")
 
-        df = pd.read_csv(f"{rawDataPath}/{fileName}", skiprows=1, header=None, dtype=str, sep='|')
-        # df = pd.read_csv(f"{rawDataPath}/{fileName}", skiprows=1, header=None, sep='|')
-        
-        # df.columns = df.iloc[0] #Get Column name from the first row
-        # df = df[1:] # Remove First row
-        
+        # Split all row in df
+        df = df[0].str.split('|', expand=True)
+        logging.info(f"Dataframe shape: {df.shape}")
+
+        # Assign column names
         df.columns =  getAllottedCols()
-        # df.columns =  getAllottedCols_custom()
-        
+
         # Remove column Filler
         df.drop(columns=["filler"],inplace=True)
 
         #To text
         # df['unitHholderId'] = df['unitHholderId'].astype(str)
 
-        # Replace  na with empty string
-        # df.fillna("", inplace=True)
-
         # Remove duplicate row
         # df.drop_duplicates(inplace=True)
 
+        # empty_strings_in_numeric_cols = df[df.select_dtypes(include=['number']).astype(str).apply(lambda x: x == "").any(axis=1)]
+        # df[empty_strings_in_numeric_cols] = df[empty_strings_in_numeric_cols].fillna(0)
 
-        empty_strings_in_numeric_cols = df[df.select_dtypes(include=['number']).astype(str).apply(lambda x: x == "").any(axis=1)]
-        df[empty_strings_in_numeric_cols] = df[empty_strings_in_numeric_cols].fillna(0)
+        # Replace empty strings in numeric columns with 0
+        numeric_cols = df.select_dtypes(include=['number']).columns
+        df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce').fillna(0).infer_objects(copy=False)
+
+        import numpy as np
+        # Replace empty strings in all columns with None
+        df = df.replace({"": None})
+
+        # Replace NaN values with None for database compatibility
+        df = df.replace({np.nan: None})
 
         #Convert nav_date to datetime object, ensuring correct format is used and handled for null values
         # Convert to datetime
         df['transactionDT'] = pd.to_datetime(df['transactionDT'], utc=True, format='%Y%m%d%H%M%S', errors='raise')
-
         df['effectiveDate'] = pd.to_datetime(df['effectiveDate'], format='%Y%m%d', errors='raise')
         df['allotmentDate'] = pd.to_datetime(df['allotmentDate'], format='%Y%m%d', errors='raise')
         df['amcPayDate'] = pd.to_datetime(df['amcPayDate'], format='%Y%m%d', errors='coerce')
@@ -162,12 +162,6 @@ def T_postgres_upsert_dataframe(fileName):
         df['allotmentDate'] = df['allotmentDate'].replace({pd.NaT: None})
         df['amcPayDate'] = df['amcPayDate'].replace({pd.NaT: None})
         df['nav_date'] = df['nav_date'].replace({pd.NaT: None})
-
-        import numpy as np
-        df = df.replace({np.nan: None})
-
-        # replaece 'nan' string with None
-        df = df.replace({'nan': None})
 
         # write df to csv file
         df.to_csv(f"{processDataPath}/unitholderBalance.csv", index=False)
@@ -200,6 +194,7 @@ def T_postgres_upsert_dataframe(fileName):
                 rows_affected = cur.rowcount
                 logging.info(f"Number of rows affected: {rows_affected} of {numData}")
 
+                # Validate check if rows affected matches expected count
                 if rows_affected != int(numData):
                     raise AirflowException("Number of rows affected does not match expected count.") 
 
@@ -248,8 +243,8 @@ with DAG(
     task3 = PythonOperator(
         task_id='pg_upsert_unitholderBalance',
         python_callable=T_postgres_upsert_dataframe,
-        op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="dwn_fnc_unitholderBalance") }}'},
-        # op_kwargs={'fileName': '20250923_MPS_ALLOTTEDTRANSACTIONS.txt'},
+        # op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="dwn_fnc_unitholderBalance") }}'},
+        op_kwargs={'fileName': '20250923_MPS_ALLOTTEDTRANSACTIONS.txt'},
         on_failure_callback=notify_teams,
     )
 
