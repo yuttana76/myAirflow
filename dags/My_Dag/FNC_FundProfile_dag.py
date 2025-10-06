@@ -212,8 +212,8 @@ with DAG(
     task3 = PythonOperator(
         task_id='postgres_upsert',
         python_callable=T_postgres_upsert_dataframe,
-        # op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="downloadFiles") }}'},
-        op_kwargs={'fileName': '20251002_MPS_FUND_PROFILE.txt'},
+        op_kwargs={'fileName': '{{ ti.xcom_pull(task_ids="downloadFiles") }}'},
+        # op_kwargs={'fileName': '20251002_MPS_FUND_PROFILE.txt'},
         on_failure_callback=notify_teams,
     )
 
