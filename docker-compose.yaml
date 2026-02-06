@@ -31,7 +31,7 @@ services:
     image: mysql
     command: mysqld --explicit_defaults_for_timestamp=1
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - my-db:/var/lib/mysql
     environment:
